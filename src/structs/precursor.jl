@@ -704,25 +704,4 @@ function getTransitions(precursor::Precursor{T}, charges::Vector{UInt8}, isotope
     vec(hcat([getTransitions(precursor, charge = charge, isotope = isotope, y_start = y_start, b_start = b_start, ppm= ppm) for charge in charges for isotope in isotopes]...))
 end
 
-export getTransitions
 
-#Can provide a list of named tuples to specify exactly which fragments to get
-export Ion
-export Transition
-export Precursor
-export getFragMZ
-export getPrecMZ
-export getMZ
-export getPepID
-export getIonType
-export getCharge
-export getIsotope
-export getFragIons
-export getBIons
-export getYIons
-export getPrecursors
-export getFragIons
-export getFragIonMZ
-export getResidues
-export MzFeature
-export getHigh, getLow, MzFeature

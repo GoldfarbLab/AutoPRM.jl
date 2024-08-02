@@ -1,5 +1,5 @@
 """
-getBestPSMs(PSMs::Dict{Symbol, Vector}, ptable::PrecursorTable, MS_TABLE::Arrow.Table, min_fragment_count::UInt8)
+surveyGetBestPSMs(PSMs::Dict{Symbol, Vector}, ptable::PrecursorTable, MS_TABLE::Arrow.Table, min_fragment_count::UInt8)
 
 Converts a dictionary of peptide spectrum matches (PSMs) into a dataframe, adds columns for the peptide id, retention time, sequence, and protein name. Also
 retains only the row for each precursor with the highest XTandem hyperscore after filtering for a minimum ion count. 
@@ -34,7 +34,7 @@ retains only the row for each precursor with the highest XTandem hyperscore afte
 ### Examples 
 
 """
-function getBestPSMs(PSMs::Dict{Symbol, Vector}, ptable::PrecursorDatabase, MS_RT::Dict{UInt32, Vector{Float32}}, min_fragment_count::UInt8)
+function surveyGetBestPSMs(PSMs::Dict{Symbol, Vector}, ptable::PrecursorDatabase, MS_RT::Dict{UInt32, Vector{Float32}}, min_fragment_count::UInt8)
     PSMs = DataFrame(PSMs)
 
     #Remove PSMs where fewer than `min_fragment_count` transitions matched a peak 
@@ -62,4 +62,22 @@ function getBestPSMs(PSMs::Dict{Symbol, Vector}, ptable::PrecursorDatabase, MS_R
     #Sort by retention time.
     sort!(PSMs, [:retention_time])
     PSMs
+end
+
+function getBestPSMs(PSMs::Dict{Symbol, Vector}, ptable::PrecursorDatabase, MS_RT::Dict{UInt32, Vector{Float32}}, min_fragment_count::UInt8)
+    PSMs = DataFrame(PSMs)
+    display(first(PSMs, 5))
+    filter!(row -> row.total_ions >= min_fragment_count, PSMs);
+    transform!(PSMs, AsTable(:) => ByRow(psm -> getPepIDFromPrecID(ptable, psm[:precursor_idx])) => :pep_idx)
+    #Charge and isotope state of precursor
+    transform!(PSMs, AsTable(:) => ByRow(psm -> getCharge(getPrecursor(ptable,psm[:precursor_idx]))) => :precursor_charge)
+    transform!(PSMs, AsTable(:) => ByRow(psm -> getIsotope(getPrecursor(ptable,psm[:precursor_idx]))) => :precursor_isotope)
+    PSMs = combine(sdf -> sdf[argmax(sdf.hyperscore), :], groupby(PSMs, [:ms_file_idx, :precursor_idx])) #combine on file and pep_idx, retain only the row with the highest hyperscore in each group
+    transform!(PSMs, AsTable(:) => ByRow(psm -> MS_RT[psm[:ms_file_idx]][psm[:scan_idx]]) => :retention_time)
+    transform!(PSMs, AsTable(:) => ByRow(psm -> getSeq(ptable.id_to_pep[psm[:pep_idx]])) => :sequence)
+    transform!(PSMs, AsTable(:) => ByRow(psm -> getMZ(getPrecursor(ptable,psm[:precursor_idx]))) => :precursor_mz)
+    #(collect(getProtIDs(getIDToPepGroup(ptable)[getGroupID(getIDToPep(ptable)[psm[:pep_idx]])])))
+    transform!(PSMs, AsTable(:) => ByRow(psm -> join(sort((collect(getProtNamesFromPepSeq(ptable, psm[:sequence])))), "|")) => :protein_names)  
+    sort!(PSMs, [:retention_time])
+    return PSMs
 end

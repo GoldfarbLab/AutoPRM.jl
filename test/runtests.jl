@@ -1,52 +1,40 @@
-using DataFrames
+##########
+#Load Dependencies 
+##########
+using ArgParse, Arrow
+using Base.Iterators
+using Combinatorics, CSV
+using DataFrames, Dictionaries
+using JSON
+using Missings
+using PDFmerger, Plots, PrettyPrinting, Printf, ProgressBars
+using RobustModels
+using SpecialFunctions, Statistics, Suppressor
+using Tables, Test
+using AutoPRM
 
-include("../src/precursor.jl")
-include("../src/matchpeaks.jl")
-include("../src/PSM_TYPES/FastXTandem.jl")
-include("../src/getPrecursors.jl")
-include("../src/binaryRangeQuery.jl")
+const package_root = dirname(@__DIR__);
+include(joinpath(package_root, "src", "utils", "importScripts.jl"))
+importScripts(package_root)
+
+@testset "AutoPRM.jl" begin
+    
 include("precursor.jl")
-
-include("../src/applyMods.jl")
 include("applyMods.jl")
-include("../src/Routines/PRM/IS-PRM-SURVEY/buildPrecursorTable.jl")
-#include("./Routines/PRM/IS-PRM-SURVEY/buildPrecursorTable.jl")
 include("Routines/PRM/IS-PRM-SURVEY/buildPrecursorTable.jl")
-
-include("../src/Routines/PRM/IS-PRM/buildPrecursorTable.jl")
-#include("./Routines/PRM/IS-PRM/buildPrecursorTable.jl")
 include("Routines/PRM/IS-PRM/buildPrecursorTable.jl")
-
 include("matchpeaks.jl")
 include("binaryRangeQuery.jl")
 include("PSM_TYPES/FastXTandem.jl")
-
-include("../src/Routines/PRM/getMS1PeakHeights.jl")
-#include("./Routines/PRM/getMS1PeakHeights.jl")
 include("Routines/PRM/getMS1PeakHeights.jl")
-
-include("../src/Routines/PRM/IS-PRM-SURVEY/getBestTransitions.jl")
-#include("./Routines/PRM/IS-PRM-SURVEY/getBestTransitions.jl")
 include("Routines/PRM/IS-PRM-SURVEY/getBestTransitions.jl")
-
-include("../src/Routines/PRM/IS-PRM/getScanPairs.jl")
-#include("./Routines/PRM/IS-PRM/getIntegrationBounds.jl")
 include("Routines/PRM/IS-PRM/getScanPairs.jl")
-
-include("../src/LFQ.jl")
 include("LFQ.jl")
 
-include("../src/Routines/PRM/precursorChromatogram.jl")
-include("../src/Routines/PRM/IS-PRM/parEstimation.jl")
-
-include("../src/SearchRAW.jl")
-include("../src/Routines/PRM/IS-PRM/selectTransitions.jl")
-
-include("../src/Routines/PRM/IS-PRM/getBestPSMs.jl")
 ##########
 #Test Routine
 ##########
-using Arrow, JSON, Tables, DataFrames, Plots
+    #=
     params = JSON.parse(read("../data/example_config/IS-PRM-SURVEY-TEST.json", String))
     function parse_mods(fixed_mods)
         fixed_mods_parsed = Vector{NamedTuple{(:p, :r), Tuple{Regex, String}}}()
@@ -129,7 +117,6 @@ using Arrow, JSON, Tables, DataFrames, Plots
                 ) 
         end
     end 
-    using Statistics, RobustModels
     for i in collect(eachindex(MS_TABLE_PATHS))
         println(i)
         getPARs(ptable, precursor_chromatograms[i], minimum_scans = 3, ms_file_idx = UInt32(i))
@@ -158,5 +145,7 @@ using Arrow, JSON, Tables, DataFrames, Plots
     IS_PRM = `julia --threads 24 ./src/Routines/PRM/IS-PRM/routine.jl ./data/example_config/IS-PRM-TEST.json ./data/parquet ./data/parquet/transition_list.csv`
     run(IS_PRM)
     cd("test/")
+    =#
+end
 #include("./PSM_TYPES/FastXTandem.jl")
 #include("getPrecursors.jl")

@@ -1,5 +1,3 @@
-
-using Test, Combinatorics, Dictionaries 
 function Tol(a, b, ppm = 2)
     abs(a-b)<=(ppm*minimum((a, b))/1000000)
 end

@@ -1,5 +1,4 @@
 @testset "binaryRangeQuery.jl" begin
-    using Missings
     arr = allowmissing([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     @test binaryGetNearest(arr, 5, 2, 2) == 5
 

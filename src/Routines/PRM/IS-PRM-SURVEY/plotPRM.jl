@@ -1,4 +1,3 @@
-using Printf 
 function plotBestSpectra(matched_ions::NamedTuple{(:rt, :scan_idx, :name, :mz, :intensity), Tuple{Float32, Int64, Vector{String}, Vector{Float32}, Vector{Float32}}}, RAW::Arrow.Table, title::String, out_path::String)
 
     function plotSpectra!(p::Plots.Plot{Plots.GRBackend}, masses, intensities)

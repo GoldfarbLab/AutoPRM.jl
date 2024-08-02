@@ -1,6 +1,4 @@
 #using Titus
-using Test
-using Tables, Arrow, Base.Iterators
 #=println(pwd())
 include("../src/integrate.jl")
 GAPDH_VGVNGFGR = Arrow.Table("../data/parquet/GAPDH_VGVNGFGR.arrow")
