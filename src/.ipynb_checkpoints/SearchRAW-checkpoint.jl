@@ -23,14 +23,14 @@ function SearchRAW(
     skip = 1
     for i in range(1, length(spectra[:masses]))#Tables.namedtupleiterator(spectra)
         #i += 1
-        if isequal(spectra[:precursorMZ][i], missing)
+        if isequal(spectra[:centerMass][i], missing)
             skip += 1
             continue
         end
         #
         #params = getSpectrumSpecificParams(spectrum, selectParams)
 
-        transitions = selectTransitions(spectra[:precursorMZ][i], 
+        transitions = selectTransitions(spectra[:centerMass][i], 
                                         ptable,
                                         right_precursor_tolerance,
                                         left_precursor_tolerance
