@@ -56,7 +56,7 @@ function getMS1PeakHeights!(ms1_max_heights::UnorderedDictionary{UInt32, T},
     #println("tunction")
     #i = 1
 
-    for scan_idx in eachindex(retentionTimes)
+    for (scan_idx, rt) in enumerate(retentionTimes)
         if msOrders[scan_idx]!=Int32(1) #Skip non MS1 scans. 
             continue
         end

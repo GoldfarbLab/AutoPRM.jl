@@ -7,8 +7,8 @@ test_best_psm = (rt = 10.0,
     intensity = Float64[1000, 2000, 500]
     )
 
-@test getBestTransitions(test_best_psm,maximum_fragment_count =  UInt8(1)) == [2]
-@test getBestTransitions(test_best_psm,maximum_fragment_count = UInt8(2)) == [2, 3]
+@test surveyGetBestTransitions(test_best_psm,maximum_fragment_count =  UInt8(1)) == [2]
+@test surveyGetBestTransitions(test_best_psm,maximum_fragment_count = UInt8(2)) == [2, 3]
 
 
 test_best_psm = (rt = 10.0,
@@ -18,9 +18,9 @@ test_best_psm = (rt = 10.0,
     intensity = Float64[1000, 2000, 500, 500, 500]
     )
 
-    @test getBestTransitions(test_best_psm,maximum_fragment_count =UInt8(3)) == [2, 4, 5]
-    @test getBestTransitions(test_best_psm,maximum_fragment_count = UInt8(2)) == [2, 4]
-    @test getBestTransitions(test_best_psm,maximum_fragment_count = UInt8(10)) == [2, 4, 5]
+    @test surveyGetBestTransitions(test_best_psm,maximum_fragment_count =UInt8(3)) == [2, 4, 5]
+    @test surveyGetBestTransitions(test_best_psm,maximum_fragment_count = UInt8(2)) == [2, 4]
+    @test surveyGetBestTransitions(test_best_psm,maximum_fragment_count = UInt8(10)) == [2, 4, 5]
 
 
 end

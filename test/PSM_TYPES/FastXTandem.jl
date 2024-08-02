@@ -1,6 +1,3 @@
-using Test
-using Tables, Arrow, Base.Iterators
-
 function Tol(a, b, ppm = 5)
     abs(a-b)<=(ppm*minimum((a, b))/1000000)
 end

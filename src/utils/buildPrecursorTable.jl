@@ -73,5 +73,3 @@ function buildPrecursorTable!(ptable::PrecursorDatabase,
         println("Time to build precursor table ", timetaken);
     end
 end
-
-export buildPrecursorTable

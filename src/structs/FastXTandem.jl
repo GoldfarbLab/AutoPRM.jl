@@ -45,8 +45,6 @@ function ModifyFeatures!(score::FastXTandem{U}, transition::Transition, mass::Un
     #push!(results[prec_id].test, getIonType(Transitions[transition]))
 end
 
-using SpecialFunctions
-
 function makePSMsDict(::FastXTandem{T}) where {T<:Real}
     Dict(
         :hyperscore => T[],

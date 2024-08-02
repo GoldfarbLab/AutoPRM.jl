@@ -1,7 +1,3 @@
-using RobustModels
-using Suppressor
-using Test
-
 """
     getPARs(ptable::ISPRMPrecursorTable,precursor_chromatograms::UnorderedDictionary{UInt32, PrecursorChromatogram};minimum_scans::Int = 3,ms_file_idx::UInt32 = UInt32(0))
 
