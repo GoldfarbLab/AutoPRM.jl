@@ -1,4 +1,4 @@
-# Titus: Method Preparation and Data Analysis for Internal Standard Triggered Parallel Reaction Monitoring (IS-PRM). 
+# AutoPRM: Method Preparation and Data Analysis for Internal Standard Triggered Parallel Reaction Monitoring (IS-PRM). 
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://nwamsley1.github.io/Titus.jl/stable/)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://nwamsley1.github.io/Titus.jl/dev/)
@@ -6,52 +6,109 @@
 
 [![Coverage](https://codecov.io/gh/nwamsley1/AutoPRM.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/nwamsley1/AutoPRM.jl)
 ## Aims
-  Titus aims to simplify preparation and analysis of IS-PRM experiments [1]. Supports analysis of survey runs to characterize internal standard peptides, preparation of methods, peak area ratio estimation and protein-level quantitation. Generates high-quality, informative chromatogram and spectra plots in multi-page pdf's, which are ctrl+f searchable in any standard pdf viewer. Titus is fast, supports multi-threading, and enables analysis of >100 experiments possible in ~1 min including compilation time. Chromatogram plot generation make take a bit longer. Still a work-in-progress and feedback welcome. 
-  
-## Features
-- Cross platform (tested on MacOS and ubuntu)
-- Accepts raw ms data in the Apache Arrow format. See the following for cross-platform conversion of Thermo .raw files to the arrow format https://github.com/nwamsley1/ThermoRawFileToParquetConverter.
-- Analysis of survey methods. Given a list table of protein-peptide pairs, identifies the best charge state for each precursor (by XTandem hyperscore), the best transitions, and the MS1 peak height. If the survey analyses are split accross multiple experiments, these can be analyzed at once and combined. In addition, can run survey analyses at multiple collision energies/FAIMS CV's to identify the optimum for each analyte. Output is given in a format freindly to XCalibur method editor for Thermo Tribrid instruments.
-- Supports variable and fixed modifications defined by regular expressions and includes examples. 
-- Estimates peak area ratios using an MM-Estimator (https://github.com/getzze/RobustModels.jl/blob/main/docs/make.jl). Enables accurate par estimation in the pressence of noisy or interfered transitions. High uncertainty in estimation can be used as grounds for exclusion. 
-- Summarizaiton of peptide-level quantitation to protein-level quantitation using the MaxLFQ Algorithm without normalization [2].
-- Generates a multi-page pdf for each experiment file including chromatogram plots. 
-![alt text](https://github.com/nwamsley1/Titus.jl/blob/main/figures/AADLLVNLDPR.png)
+  Titus aims to simplify preparation and analysis of IS-PRM experiments [1]. Supports analysis of survey runs to characterize internal standard peptides, preparation of methods, peak area ratio estimation and protein-level quantitation.
 
-## Future Additions/In-Progress 
-- Work in progress 
-- More complete documentation. At present only basic usage examples are given, and docstrings for most methods are listed in the CI docs but in no particular order. https://documentation.divio.com/
-- Robust benchmarking of PAR estimation using robust linear estimators agasint against previously used methods, such as top-N [3] or exclusion of transitions based on cosine-similarity metrics [4].
-- If standard curves are available for absolute quantitation, the ability to convert PAR estimates to abundances
-- Better plot annotations
-- Currently not available as an Julia package. Usability is akward and could use improvement. Not all parameters can be user-defined yet. 
-- Some performance issues in "precursors.jl" that should be reasonably easy to resolve. 
-- Future support of standard PRM and DIA using prosit libraries and spectral devonvolution?
-- Lots of others. Suggest your own....
 ## Installation
-1) Titus requires an installation of Julia 1.4 or later. Download [julia](https://pages.github.com/) and add it to the PATH. 
+1) AutoPRM requires Julia 1.10. Download [julia](https://pages.github.com/) and add it to the PATH. 
 2) Open an instance of the julia REPL
-3) Type ";" to activate the shell from within the REPL. Then, navigate to the desired directory and clone the Titus.jl repository.
+3) Type ";" to activate the shell from within the REPL. Then, navigate to the desired directory and clone the AutoPRM.jl repository.
 ```
-shell> git clone https://github.com/nwamsley1/Titus.jl.git
+shell> git clone https://github.com/nwamsley1/AutoPRM.jl.git
+```
+and not move into the package directory
+```
+shell> cd AutoPRM.jl
 ```
 4) Return to julia by hitting the backspace key. Activate the julia package manager by typing "]" into the REPL and enter the following:
 ```
-(@v1.9) plg> activate .
-(Titus) pkg> instantiate
+(@v1.10) pkg> activate
+(@v1.10) pkg> develop ./
+(@v1.10) pkg> add ./
 ```
-Downloading dependencies using "instantiate" may take several minutes
-## Usage
 
-### Survey Run Analyses
-###### POSIX
+## Usage
+AutoPRM exports three methods "SearchPRM", "SearchSurvey", and "BuildSurvey". Each takes a single argument, that is a file path to a .json parameters files (examples included). To access these methods
+import the AutoPRM package from within the Julia REPL. 
 ```
-julia ./src/Routines/PRM/IS-PRM-SURVEY/routine.jl ./data/example_config/IS-PRM-SURVEY-TEST.json ./data/parquet/ ./data/NRF2_SIL.txt
+julia> using AutoPRM
 ```
-###### Windows
+### File Conversion
+`AutoPRM` requires Thermo .raw files be converted to an Apache .arrow format with a specific column specification. Use [PioneerConverter](https://github.com/nwamsley1/PioneerConverter) to convert .raw files. 
+
+### BuildSurvey
+BuildSurvey constructs a table of precursors, m/z ratios, charge states, and intensity thresholds needed to build a SurveyMethod to analyze a new plate or aliquot of SIL peptides. This table can be directly loaded
+into the Thernmo method editor. 
+
+##### Peptide List File
+BuildSurvey requires takes a tab-delimited petide list file with at least two columns, "PROTEIN" and "PRECURSOR". The PROTEIN column is the Gene name, Uniprot ID, etc. that you want to associate with the PRECURSOR.
+The PRECURSOR is the peptide sequence using one of the 20 standard single-letter amino-acid abbreviasions. On Mac/Linux, you can inspect an example file "HUMAN_IMMUNOLOGY_PEPTIDE_LIST_SEP_2023.txt" with the `head` command:
 ```
-julia .\\src\\Routines\\PRM\\IS-PRM-SURVEY\\routine.jl .\\data\\example_config\\IS-PRM-SURVEY-TEST.json .\\data\\parquet\\ .\\data\\NRF2_SIL.txt
+╭─n.t.wamsley@3225-AD-00020.local ~/TEST_DATA/SUREQUANT_JUL24/HUMAN_IMMUNOLOGY  
+╰─➤  head HUMAN_IMMUNOLOGY_PEPTIDE_LIST_SEP_2023.txt 
+PROTEIN	PEPTIDE	VENDOR	ID	WELL
+ARG1	GGVEEGPTVLR	Thermo	NR102342.1	A1
+ARG1	VMEETLSYLLGR	Thermo	NR102342.2	A2
+AXL	APLQGTLLGYR	Thermo	NR102342.3	A3
+AXL	TATITVLPQQPR	Thermo	NR102342.4	A4
+B2M	VNHVTLSQPK	Thermo	NR102342.5	A5
+B2M	VEHSDLSFSK	Thermo	NR102342.6	A6
+CCL20	QLANEGCDINAIIFHTK	Thermo	NR102342.7	A7
+CCL20	LSVCANPK	Thermo	NR102342.8	A8
+CD163	EAEFGQGTGPIWLNEVK	Thermo	NR102342.9	A9
 ```
+
+##### Parameter File
+The parameter file it a text file in the `.json` format. It contains instructions for building the survey run. It often makes sense to split a single peptide panel into multiple survey runs, for example, one per charge state. However, for a short list of peptides, we can prepare a single run. 
+In this cas all the SIL pepetides in the mix are heavy, so we specify K[Hlys] and R[Harg] as fixed modifications. The `peptide_list_path` argument is an absolute path to the peptide list file (above). Example: 
+```
+╭─n.t.wamsley@3225-AD-00020.local ~/TEST_DATA/SUREQUANT_JUL24/HUMAN_IMMUNOLOGY  
+╰─➤  cat params/build_survey_params.json
+{
+        "fixed_mods":[
+                     ["C","C[Carb]"],
+                     ["K$","K[Hlys]"],
+                     ["R$","R[Harg]"]
+        ],
+        "modification_masses":
+        {
+        "Carb":57.021464,
+        "Harg":10.008269,
+        "Hlys":8.014199
+        },
+    "charges": [2, 3, 4],
+"peptide_list_path":"/Users/n.t.wamsley/TEST_DATA/SUREQUANT_JUL24/HUMAN_IMMUNOLOGY/HUMAN_IMMUNOLOGY_PEPTIDE_LIST_SEP_2023.txt"
+}
+```
+##### Run BuildSurvey
+Using the list of SIL peptides, we will start Julia, import the `AuroPRM` library, and run the "BuildSurvey" method providing a path to the parameter file. This will build a folder `SurveyMethod` containing `SurveyMethod.csv` that we can import into the Survey method file in the Thermo method editor. 
+
+```
+╭─n.t.wamsley@3225-AD-00020.local ~/TEST_DATA/SUREQUANT_JUL24/HUMAN_IMMUNOLOGY  
+╰─➤  julia
+julia> using AutoPRM
+[ Info: Precompiling AutoPRM [161ade51-a71e-4c5f-b262-f1262fd3217d]
+[ Info: Skipping precompilation since __precompile__(false). Importing AutoPRM [161ade51-a71e-4c5f-b262-f1262fd3217d].
+┌ Warning: Replacing docs for `AutoPRM.PSM :: Union{}` in module `AutoPRM`
+└ @ Base.Docs docs/Docs.jl:243
+julia> BuildSurvey("params/build_survey_params.json")
+"/Users/n.t.wamsley/TEST_DATA/SUREQUANT_JUL24/HUMAN_IMMUNOLOGY/SurveyMethod/SurveyMethod.csv"
+julia> exit()
+╭─n.t.wamsley@3225-AD-00020.local ~/TEST_DATA/SUREQUANT_JUL24/HUMAN_IMMUNOLOGY  
+╰─➤  head SurveyMethod/SurveyMethod.csv 
+Compound,Formula,Adduct,m/z,z,intensity_threshold
+ARG1_GGVEEGPTVLR[Harg],,,562.3026884000001,2,10000.0
+ARG1_GGVEEGPTVLR[Harg],,,375.20421773333334,3,10000.0
+ARG1_GGVEEGPTVLR[Harg],,,281.6549824,4,10000.0
+ARG1_VMEETLSYLLGR[Harg],,,710.8726283999999,2,10000.0
+ARG1_VMEETLSYLLGR[Harg],,,474.25084439999995,3,10000.0
+ARG1_VMEETLSYLLGR[Harg],,,355.9399523999999,4,10000.0
+AXL_APLQGTLLGYR[Harg],,,599.8445284000001,2,10000.0
+AXL_APLQGTLLGYR[Harg],,,400.2321110666667,3,10000.0
+AXL_APLQGTLLGYR[Harg],,,300.4259024,4,10000.0
+```
+
+
+### SearchSurvey
 
 |Name                |Default| Short        |Description                    |
  |--------------------|-------|-------------|--------------------|
