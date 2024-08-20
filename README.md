@@ -109,6 +109,91 @@ AXL_APLQGTLLGYR[Harg],,,300.4259024,4,10000.0
 
 
 ### SearchSurvey
+##### Convert Survey Run to Arrow
+Move all survey runs into the 'survey_runs' folder. From the `PioneerConverter` directory, convert the `.raw` survey runs to `.arrow` format
+```
+╭─n.t.wamsley@3225-AD-00020.local ~/TEST_DATA/SUREQUANT_JUL24/NRF2_HP/PioneerConverter  ‹master*› 
+╰─➤  dotnet run ../../HUMAN_IMMUNOLOGY/survey_runs/IMMUNOSIL_80nMSIL_1ugPEP_METHTEST_08022024_01.raw 
+Converting: IMMUNOSIL_80nMSIL_1ugPEP_METHTEST_08022024_01
+batchSize: 10000
+n_threads: 2
+Starting Conversion For: IMMUNOSIL_80nMSIL_1ugPEP_METHTEST_08022024_01
+Execution Time: 6844 ms for IMMUNOSIL_80nMSIL_1ugPEP_METHTEST_08022024_01
+```
+##### Parameter File
+The parameter file cat params/search_survey_params.json contains the instructions for how to search the survey run. Make sure to change the ms_data_dir to the directory containing the .arrow formatted survey run. Also set peptide_list_path to HUMAN_IMMUNOLOGY_PEPTIDE_LIST_SEP_2023.txt, the same precursor list used to build the survey run
+```
+╭─n.t.wamsley@3225-AD-00020.local ~/TEST_DATA/SUREQUANT_JUL24/HUMAN_IMMUNOLOGY  
+╰─➤  cat params/search_survey_params.json
+{
+    "right_precursor_tolerance": 0.001,
+    "left_precursor_tolerance": 0.001,
+    "precursor_rt_tolerance": 0.3,
+    "b_ladder_start": 3,
+    "y_ladder_start": 4,
+    "precursor_charges": [2, 3, 4],
+    "precursor_isotopes": [0],
+    "transition_charges": [1, 2],
+    "transition_isotopes": [0],
+    "fragment_match_ppm": 40,
+    "minimum_fragment_count": 5,
+    "fragments_to_select": 5,
+    "precursor_rt_window": 0.3,
+    "max_variable_mods": 2,
+    "fixed_mods":[
+                     ["C","C[Carb]"],
+                     ["K$","K[Hlys]"],
+                     ["R$","R[Harg]"]
+    ],
+    "variable_mods":
+    [],
+    "modification_masses":
+        {
+        "Carb":57.021464,
+        "Harg":10.008269,
+        "Hlys":8.014199
+        },
+    "ms_file_conditions":
+        {
+            "_35NCE_":"35NCE",
+            "_40NCE_":"40NCE",
+            "GAPDH":"GAPDH"
+        },
+    "ms_data_dir": "/Users/n.t.wamsley/TEST_DATA/SUREQUANT_JUL24/HUMAN_IMMUNOLOGY/survey_runs/arrow_out",
+    "peptide_list_path": "/Users/n.t.wamsley/TEST_DATA/SUREQUANT_JUL24/HUMAN_IMMUNOLOGY/HUMAN_IMMUNOLOGY_PEPTIDE_LIST_SEP_2023.txt"
+}
+```
+##### Run SearchSurvey
+Searching the survey generates output in the same folder as the `.arrow` raw files. Outputs are `iapi_method.csv`, `transition_list.csv`, `precursors_summary.csv`, and a folder `figures`. The `iapi_method.csv` is an input for the Thermo IAPI SureQuant method. It specifies
+the precursor m/z ratios, expected fragment ions, etc. To search an IS-PRM run, `transition_list.csv` is required as an input. `precursors_summary.csv` reports the best psm for each precursor accross all the survey runs searched. This can be useful for
+combining the results of many surveys at different NCE or FAIMS CV values. The `figures` folder contains chromatograms and annotated spectra for the SIL peptides from the survey run. 
+```
+julia> SearchSurvey("params/search_survey_params.json")
+
+shell> head survey_runs/arrow_out/iapi_method.csv
+protein_name,sequence,precursor_mz,precursor_charge,retention_time,precursor_intensity,hyperscore,NthIntensity,sumTopN,file_name,condition,transition_mz
+ARG1,GGVEEGPTVLR[Harg],562.3026884000001,2,39.35995,7.8305648e7,51.076622009277344,9.583797e6,3.9467732e7,IMMUNOSIL_80nMSIL_1ugPEP_METHTEST_08022024_01.arrow,NONE,652.3972;781.4386;910.4792;595.376;214.11655
+ARG1,VMEETLSYLLGR[Harg],710.8726283999999,2,61.726166,1.5517284e7,54.347801208496094,1.9420418e6,8.438351e6,IMMUNOSIL_80nMSIL_1ugPEP_METHTEST_08022024_01.arrow,NONE,718.4056;932.5331;1061.574;831.4879;631.37427
+AXL,APLQGTLLGYR[Harg],599.8445284000001,2,51.279736,4.1923796e7,54.990875244140625,4.6274795e6,1.9375808e7,IMMUNOSIL_80nMSIL_1ugPEP_METHTEST_08022024_01.arrow,NONE,789.456;917.5154;1030.5983;518.30206;732.4348
+AXL,TATITVLPQQPR[Harg],667.8869284000001,2,45.642937,2.6542056e7,56.771541595458984,5.0537445e6,1.9140718e7,IMMUNOSIL_80nMSIL_1ugPEP_METHTEST_08022024_01.arrow,NONE,635.3557;948.5567;748.43976;847.5089;274.14142
+...
+
+shell> head survey_runs/arrow_out/transition_list.csv
+protein_name,sequence,precursor_charge,precursor_isotope,transition_names
+ARG1,GGVEEGPTVLR[Harg],2,0,y6+1;y7+1;y8+1;y5+1;b3+1
+ARG1,VMEETLSYLLGR[Harg],2,0,y6+1;y8+1;y9+1;y7+1;y5+1
+AXL,APLQGTLLGYR[Harg],2,0,y7+1;y8+1;y9+1;y4+1;y6+1
+AXL,TATITVLPQQPR[Harg],2,0,y5+1;y8+1;y6+1;y7+1;b3+1
+...
+
+shell> head survey_runs/arrow_out/precursors_summary.csv
+protein_name,sequence,precursor_mz,precursor_charge,retention_time,precursor_intensity,hyperscore,NthIntensity,sumTopN,file_name,condition,transition_mz
+FOXP3,HNLSLHK[Hlys],428.7475883999999,2,24.704,1.0979155e6,25.879701614379883,40209.586,186015.69,IMMUNOSIL_80nMSIL_1ugPEP_METHTEST_08022024_01.arrow,NONE,719.4211;565.30206;702.3848;365.18796;605.3863
+CD8A,AAEGLDTQR[Harg],485.74501339999995,2,27.910803,2.7493786e7,44.79069137573242,3.184588e6,1.2822804e7,IMMUNOSIL_80nMSIL_1ugPEP_METHTEST_08022024_01.arrow,NONE,699.37195;828.4157;529.2649;642.3484;272.124
+...
+
+```
+
 
 |Name                |Default| Short        |Description                    |
  |--------------------|-------|-------------|--------------------|
