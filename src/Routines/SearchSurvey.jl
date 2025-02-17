@@ -216,6 +216,9 @@ function SearchSurvey(params_path::String)
     
         surveyWriteTransitionList(best_psms, joinpath(MS_DATA_DIR, "transition_list.csv"))
         surveyWriteIAPIMethod(best_psms, joinpath(MS_DATA_DIR, "iapi_method.csv"))
+
+        surveyWriteTransitionListSureQuant(best_psms, joinpath(MS_DATA_DIR, "transition_list_SureQuant"))
+        surveyWriteSILsSureQuant(best_psms, joinpath(MS_DATA_DIR, "SILs_SureQuant"))
         
         println(" Scored "*string(size(best_psms)[1])*" precursors")
         ##########

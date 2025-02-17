@@ -1,3 +1,42 @@
+function surveyWriteTransitionListSureQuant(best_psms::DataFrame, f_out::String)
+
+    for precursor_z in unique(best_psms[!, :precursor_charge])
+        for heavy_AA in ["Hlys", "Harg"]
+            sub_psms = filter(row -> row.precursor_charge == precursor_z && occursin(heavy_AA, row.sequence), best_psms)
+            open(f_out * "_" * heavy_AA * "_" * string(precursor_z) * ".csv", "w") do io
+                # loop over data and write each line
+                write(io, join(["Compound","m/z","Group ID"],",")*"\n")
+                for row in eachrow(sub_psms)
+                    for i in range(1, length(row[:transition_names]))
+                        data = push!([row[:transition_names][i], 
+                                    row[:transition_mzs][i],
+                                    row[:precursor_mz]])
+                        write(io, join(data,",")*"\n")
+                    end
+                end
+            end
+        end
+    end
+end
+
+function surveyWriteSILsSureQuant(best_psms::DataFrame, f_out::String)
+    for precursor_z in unique(best_psms[!, :precursor_charge])
+        for heavy_AA in ["Hlys", "Harg"]
+            sub_psms = filter(row -> row.precursor_charge == precursor_z && occursin(heavy_AA, row.sequence), best_psms)
+            open(f_out * "_" * heavy_AA * "_" * string(precursor_z) * ".csv", "w") do io
+                # loop over data and write each line
+                write(io, join(["Compound","m/z","Intensity Threshold"],",")*"\n")
+                for row in eachrow(sub_psms)
+                    data = push!([row[:sequence], 
+                                row[:precursor_mz],
+                                "10000"])
+                    write(io, join(data,",")*"\n")
+                end
+            end
+        end
+    end
+end
+
 function surveyWriteTransitionList(best_psms::DataFrame, f_out::String)
     open(f_out, "w") do io
         # loop over data and write each line
