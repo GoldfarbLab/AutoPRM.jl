@@ -2,15 +2,21 @@ function SearchSurvey(params_path::String)
 
     [include(joinpath(package_root, 
     "src", "Routines","PRM","IS-PRM-SURVEY", jl_file)
-    ) for jl_file in [
-                        "buildPrecursorTable.jl",
-                        "writeTables.jl",
-                        "plotPRM.jl"]]
+    ) for jl_file in ["plotPRM.jl"]]
+
+[include(joinpath(package_root, 
+    "src", "utils", jl_file)
+    ) for jl_file in ["writeTables.jl"]]
+
+	[include(joinpath(package_root, 
+    "src", "structs", jl_file)
+    ) for jl_file in ["buildPrecursorTable.jl"]]
 
 
     params = JSON.parse(read(params_path, String));
     MS_DATA_DIR = params["ms_data_dir"];
-    SPEC_LIB_DIR = params["library_folder"];
+	PRECURSOR_LIST_PATH = params["peptide_list_path"];
+    #SPEC_LIB_DIR = params["library_folder"];
     MS_TABLE_PATHS = [joinpath(MS_DATA_DIR, file) for file in filter(file -> isfile(joinpath(MS_DATA_DIR, file)) && match(r"\.arrow$", file) != nothing, readdir(MS_DATA_DIR))]
     println("Processing: "*string(length(MS_TABLE_PATHS))*" files")
 
@@ -121,8 +127,8 @@ function SearchSurvey(params_path::String)
                 getMS1PeakHeights!( ms1_peak_heights[ms_file_idx],
                                     ptable,
                                     MS_TABLE[:retentionTime], 
-                                    MS_TABLE[:masses], 
-                                    MS_TABLE[:intensities], 
+                                    MS_TABLE[:mz_array], 
+                                    MS_TABLE[:intensity_array], 
                                     MS_TABLE[:msOrder],
                                     best_psms[!,:retention_time], 
                                     best_psms[!,:precursor_idx], 

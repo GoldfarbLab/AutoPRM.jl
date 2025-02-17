@@ -18,7 +18,7 @@ function plotBestSpectra(matched_ions::NamedTuple{(:rt, :scan_idx, :name, :mz, :
     end
 
     p = plot(title = title, fontfamily="helvetica")
-    plotSpectra!(p, RAW[:masses][matched_ions[:scan_idx]], RAW[:intensities][matched_ions[:scan_idx]])
+    plotSpectra!(p, RAW[:mz_array][matched_ions[:scan_idx]], RAW[:intensity_array][matched_ions[:scan_idx]])
     addFragmentIons!(p, matched_ions)
     savefig(joinpath(out_path,title*".pdf"))
 
