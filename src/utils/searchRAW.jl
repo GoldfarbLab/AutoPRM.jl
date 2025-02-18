@@ -1,60 +1,60 @@
 function SearchRAW(
-                   spectra::Arrow.Table, 
-                   ptable::PrecursorDatabase,
-                   selectTransitions, 
-                   right_precursor_tolerance::U,
-                   left_precursor_tolerance::U,
-                   transition_charges::Vector{UInt8},
-                   transition_isotopes::Vector{UInt8},
-                   b_start::Int64,
-                   y_start::Int64,
-                   fragment_match_ppm::U,
-                   ms_file_idx::UInt32;
-                   data_type::Type{T} = Float32
-                   ) where {T,U<:Real}
-    
-    scored_PSMs = makePSMsDict(FastXTandem(data_type))
-    #not goinig to want this for all methods
-    allFragmentMatches = Vector{FragmentMatch{T}}()
+    spectra::Arrow.Table, 
+    ptable::PrecursorDatabase,
+    selectTransitions, 
+    right_precursor_tolerance::U,
+    left_precursor_tolerance::U,
+    transition_charges::Vector{UInt8},
+    transition_isotopes::Vector{UInt8},
+    b_start::Int64,
+    y_start::Int64,
+    fragment_match_ppm::U,
+    ms_file_idx::UInt32;
+    data_type::Type{T} = Float32
+    ) where {T,U<:Real}
 
-    #precursorList needs to be sorted by precursor MZ. 
-    #Iterate through rows (spectra) of the .raw data. 
-    i = 0
-    skip = 1
-    for i in range(1, length(spectra[:masses]))#Tables.namedtupleiterator(spectra)
-        #i += 1
-        if isequal(spectra[:centerMass][i], missing)
-            skip += 1
-            continue
-        end
-        #
-        #params = getSpectrumSpecificParams(spectrum, selectParams)
+scored_PSMs = makePSMsDict(FastXTandem(data_type))
+#not goinig to want this for all methods
+allFragmentMatches = Vector{FragmentMatch{T}}()
 
-        transitions = selectTransitions(spectra[:centerMass][i], 
-                                        ptable,
-                                        right_precursor_tolerance,
-                                        left_precursor_tolerance
-                                        )
-        #Named tuple for scan 
-        #println("transitions ", transitions)
-        fragmentMatches = matchPeaks(transitions, 
-                                    spectra[:masses][i], 
-                                    spectra[:intensities][i], 
-                                    #δs = params[:δs],
-                                    δs = zeros(T, (1,)),#[Float64(0)],
-                                    scan_idx = UInt32(i),
-                                    ms_file_idx = ms_file_idx)
-        #sort(getTransitions(selectPrecursors(spectrum)),  
-        #                    by = t-> getMZ(t))
-        unscored_PSMs = UnorderedDictionary{UInt32, FastXTandem{T}}()
+#precursorList needs to be sorted by precursor MZ. 
+#Iterate through rows (spectra) of the .raw data. 
+i = 0
+skip = 1
+for i in range(1, length(spectra[:mz_array]))#Tables.namedtupleiterator(spectra)
+#i += 1
+if isequal(spectra[:centerMz][i], missing)
+skip += 1
+continue
+end
+#
+#params = getSpectrumSpecificParams(spectrum, selectParams)
 
-        ScoreFragmentMatches!(unscored_PSMs, fragmentMatches)
-        
-        #Score!(scored_PSMs, unscored_PSMs, scan_idx = Int64(spectrum[:scanNumber]))
-        Score!(scored_PSMs, unscored_PSMs, scan_idx = Int64(i))
+transitions = selectTransitions(spectra[:centerMz][i], 
+                         ptable,
+                         right_precursor_tolerance,
+                         left_precursor_tolerance
+                         )
+#Named tuple for scan 
+#println("transitions ", transitions)
+fragmentMatches = matchPeaks(transitions, 
+                     spectra[:mz_array][i], 
+                     spectra[:intensity_array][i], 
+                     #δs = params[:δs],
+                     δs = zeros(T, (1,)),#[Float64(0)],
+                     scan_idx = UInt32(i),
+                     ms_file_idx = ms_file_idx)
+#sort(getTransitions(selectPrecursors(spectrum)),  
+#                    by = t-> getMZ(t))
+unscored_PSMs = UnorderedDictionary{UInt32, FastXTandem{T}}()
 
-        append!(allFragmentMatches, fragmentMatches)
-    end
-    #println(prec_id_to_transitions)
-    (scored_PSMs, allFragmentMatches)
+ScoreFragmentMatches!(unscored_PSMs, fragmentMatches)
+
+#Score!(scored_PSMs, unscored_PSMs, scan_idx = Int64(spectrum[:scanNumber]))
+Score!(scored_PSMs, unscored_PSMs, scan_idx = Int64(i))
+
+append!(allFragmentMatches, fragmentMatches)
+end
+#println(prec_id_to_transitions)
+(scored_PSMs, allFragmentMatches)
 end
